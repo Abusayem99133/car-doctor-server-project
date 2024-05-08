@@ -27,7 +27,7 @@ async function run() {
     await client.connect();
 
 const serviceCollection = client.db('carDoctor').collection('services');
-
+const checkOutCollection = client.db('carDoctor').collection('checkOut')
 app.get('/services', async(req, res) =>{
   const cursor  = serviceCollection.find();
   const result  = await cursor.toArray();
@@ -42,12 +42,48 @@ const options = {
   // Sort returned documents in ascending order by title (A->Z)
   // sort: { title: 1 },
   // Include only the `title` and `imdb` fields in each returned document
-  projection: {  title: 1, price: 1, service_id: 1 },
+  projection: {  title: 1, price: 1, service_id: 1,img: 1 },
 };
 const result = await serviceCollection.findOne(query,options)
 res.send(result)
 })
 
+// checkOuts 
+app.get('/checkOuts', async(req, res)=>{
+  console.log(req.query.email);
+  let query = {};
+  if(req.query?.email){
+    query = {email: req.query.email}
+  }
+  const result = await checkOutCollection.find(query).toArray();
+  res.send(result)
+})
+app.post('/checkOuts', async(req, res)=>{
+  const checkOut = req.body;
+  console.log(checkOut);
+  const result =await checkOutCollection.insertOne(checkOut);
+  res.send(result)
+})
+app.patch('/checkOuts/:id', async(req, res)=>{
+  const id = req.params.id;
+  const filter = {_id: new ObjectId(id)};
+  const updateCheckOut = req.body;
+  console.log(updateCheckOut);
+  const updateDoc = {
+    $set:{
+      status: updateCheckOut.status
+    }
+  };
+  const result = await checkOutCollection.updateOne(filter, updateDoc);
+  res.send(result)
+
+})
+app.delete('/checkOuts/:id', async(req, res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)}
+  const result = await checkOutCollection.deleteOne(query);
+  res.send(result);
+})
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
